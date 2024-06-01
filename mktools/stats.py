@@ -131,8 +131,8 @@ def calculate_all_stats(
         .fillna(0)
         .reset_index()
         .sort_values(
-            by=[season_column, npi_column, players_column],
-            ascending=[True, True, False],
+            by=[season_column, players_column, npi_column],
+            ascending=[True, False, True],
         )
         .reset_index(drop=True)
     )[

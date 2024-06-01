@@ -1,10 +1,9 @@
 import os
-import numpy as np
-import pandas as pd
 from dotenv import load_dotenv
 
 from mktools.get_data import load_data_pd
 from mktools.stats import calculate_npi, calculate_all_stats
+from mktools.write_data import create_gs_worksheet_connection
 
 load_dotenv()
 
@@ -41,6 +40,19 @@ all_stats_df = calculate_all_stats(
     fourths_column=place_dict[4],
 )
 
+records_range = all_stats_df.shape[0] + 1
 
-## TODO: Write to Google Sheet
+# Create connection to the output Google Sheet
+ws = create_gs_worksheet_connection(
+    sheet_name="all_stats",
+    sheet_id=os.environ["SHEET_ID"],
+)
 
+# Drop all previous data from the worksheet
+ws.clear()
+
+# Write the data to the google sheet
+ws.update(
+    values=([all_stats_df.columns.values.tolist()] + all_stats_df.values.tolist()),
+    range_name=f"A1:M{records_range}",
+)
