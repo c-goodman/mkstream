@@ -4,31 +4,28 @@ import polars as pl
 import streamlit as st
 import gspread as gs
 from datetime import datetime
-from home import load_data
+from home import load_data_pd, create_gs_worksheet_connection
 from dotenv import load_dotenv
 
 # Load Environment Variables
 load_dotenv()
 
 
-df = load_data(sheet_name="data", sheet_id=os.environ["SHEET_ID"])
+df = load_data_pd(sheet_name="data", sheet_id=os.environ["SHEET_ID"])
 
-gc = gs.service_account()
-sheet_id = os.environ["SHEET_ID"]
-sheet_name = "data"
-url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
-sh = gc.open_by_url(url)
-ws = sh.worksheet("data")
+ws = create_gs_worksheet_connection(sheet_name="data", sheet_id=os.environ["SHEET_ID"])
 
 st.markdown("## Enter the Stats Nerd")
 
-names_unique = df["NAME"].unique()
-map_names_unique = df["MAP"].unique()
-char_names_unique = df["CHARACTER"].unique()
+names_unique = df["NAME"].unique().to_list()
+map_names_unique = df["MAP"].unique().to_list()
+char_names_unique = df["CHARACTER"].unique().to_list()
 
-last_suid = int(df.select(pl.last("SUID")).item())
+last_suid = df.select(pl.last("SUID")).item()
 last_uid = df.select(pl.last("UID")).item()
-last_season = df.select(pl.last("SEASON")).item()
+
+
+# last_season = int(df.select(pl.last("SEASON")).item())
 
 # idx = df[df["SEASON"] == (last_season - 1)][-1]
 # print(idx)
@@ -56,31 +53,36 @@ with st.form("Enter Stats"):
 
     if sub:
         st.write("Picked", players_write)
-        data = pd.DataFrame(
+
+        new_data = pl.DataFrame(
             data={
+                "UID": last_uid + 1,
+                "SUID": suid,
                 "NAME": players_write,
                 "CHARACTER": characters_write,
+                "MAP": mk_map,
+                "DATE": datetime.now().strftime("%Y-%m-%d"),
+                "PLAYERS": len(players_write),
+                "PLACE": range(1, (1 + len(players_write)), 1),
             }
         )
-        data = data.dropna(axis=0, how="any")
 
-        data["UID"] = last_uid + 1
-        data["MAP"] = mk_map
-        data["PLACE"] = range(1, (1 + data.shape[0]), 1)
-        data["SUID"] = suid
+        # new_data = new_data.with_columns(
+        #     PLACE=pl.int_range(start=1, end=(1 + new_data.shape[0]), step=1)
+        # )
 
-        data["PLAYERS"] = data.shape[0]
-        data["DATE"] = datetime.now()
-        data["DATE"] = data["DATE"].astype(str)
+        # new_data = new_data.with_columns(PLAYERS=new_data.shape[0])
+        # new_data = new_data.with_columns(pl.col("PLAYERS").cast(dtype=pl.Int32))
 
-        data = data[
+        out_data = new_data[
             ["UID", "SUID", "NAME", "CHARACTER", "MAP", "PLACE", "PLAYERS", "DATE"]
         ]
 
-        st.dataframe(data=data)
+        st.write(out_data)
 
-        concat_df = pd.concat(objs=[df, data]).reset_index(drop=True)
-        st.write(concat_df.tail())
+        concat_df = pl.concat(items=[df, out_data], how="vertical_relaxed")
 
-        dl = data.values.tolist()
-        ws.append_rows(dl)
+        st.write(concat_df.tail(8))
+
+        some_name_not_taken = out_data.to_pandas().values.tolist()
+        ws.append_rows(some_name_not_taken)

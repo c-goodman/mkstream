@@ -1,21 +1,25 @@
+import os
 import streamlit as st
 import pandas as pd
 import polars as pl
 import numpy as np
 from plotly import express as px
 from typing import List
-from home import load_data
+from home import load_data_pd
+from dotenv import load_dotenv
+
+load_dotenv()
 
 st.markdown("# Stats")
 
 
-df = load_data().to_pandas()
+df = load_data_pd(sheet_name="data", sheet_id=os.environ["SHEET_ID"])
 
 
 def season_frames(df: pd.DataFrame, season: int):
     """Return a list of DataFrames specific to a single season where
     each DataFrame contains only rows related to PLAYERS column values.
-    
+
     Args:
         df (pd.DataFrame): Input DataFrame
         season (int): Season Number
@@ -221,7 +225,7 @@ def four_player(sdf):
             "4THS_PERCENTAGE",
         ]
     ]
-    
+
     df, nah, four_p_threshold = npi_gatekeeper(df=df, sdf=sdf, players=3, percent=0.1)
 
     df = df.sort_values(by="NPI")
@@ -233,7 +237,7 @@ def four_player(sdf):
     return four_p_df, four_p_nah, four_p_threshold
 
 
-def season_iterator(df, season_list: List[int]):
+def season_iterator(df: pd.DataFrame, season_list: List[int]) -> pd.DataFrame:
 
     stats_list = []
     nah_list = []
@@ -277,7 +281,26 @@ def season_iterator(df, season_list: List[int]):
     return stats_df
 
 
-sl = season_iterator(df=df, season_list=[6, 5, 4, 3, 2, 1, 0])
+unique_seasons = (
+    pd.Series(df["SEASON"].unique()).sort_values(ascending=False).values.tolist()
+)
+
+
+sl = season_iterator(df=df, season_list=unique_seasons)
+
+# print(sl.head(100))
+
+
+def season_stats_writer(df: pd.DataFrame, season_list: list) -> None:
+
+    wdf = df.copy()
+
+    for season_idx in season_list:
+
+        wdf[wdf["SEASON"]]
+
+
+
 
 for idx, i in enumerate(sl.stats_list):
     if idx == 0:
@@ -295,12 +318,11 @@ for idx, i in enumerate(sl.stats_list):
     elif idx == 18:
         st.markdown("## Season 0")
 
-    st.markdown(f"### {sl.s_list[idx]}")
+    st.markdown(f"### {sl["s_list"][idx]}")
     st.write(i)
     i_npi = px.histogram(i, x="NAME", y="NPI")
     st.plotly_chart(i_npi)
-    st.write(f"GAMES PLAYED CUTOFF THRESHOLD: {sl.threshold_list[idx]}")
-    st.write(sl.nah_list[idx])
-    idx_npi = px.histogram(sl.nah_list[idx], x="NAME", y="NPI")
+    st.write(f"GAMES PLAYED CUTOFF THRESHOLD: {sl["threshold_list"][idx]}")
+    st.write(sl["nah_list"][idx])
+    idx_npi = px.histogram(sl["nah_list"][idx], x="NAME", y="NPI")
     st.plotly_chart(idx_npi)
-    
