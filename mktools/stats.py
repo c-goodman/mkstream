@@ -147,10 +147,58 @@ def calculate_all_stats(
             seconds_column,
             thirds_column,
             fourths_column,
-            f"2NDS_{percent_column_suffix}",
-            f"3RDS_{percent_column_suffix}",
-            f"4THS_{percent_column_suffix}",
+            f"{seconds_column}_{percent_column_suffix}",
+            f"{thirds_column}_{percent_column_suffix}",
+            f"{fourths_column}_{percent_column_suffix}",
         ]
     ]
 
     return all_seasons_stats_df
+
+
+def calculate_all_win_rates(
+    stats_df: pd.DataFrame,
+    wins_column: str,
+    seconds_column: str,
+    thirds_column: str,
+    fourths_column: str,
+    percent_column_suffix: str = "PERCENTAGE",
+    name_column: str = "NAME",
+    players_column: str = "PLAYERS",
+) -> pd.DataFrame:
+
+    sdf = stats_df.copy()
+
+    all_wr_df = (
+        sdf.groupby(by=[name_column, players_column])
+        .agg(
+            TOTAL_WINS=pd.NamedAgg("WINS", "sum"),
+            TOTAL_GAMES_PLAYED=pd.NamedAgg("TOTAL_PLAYED", "sum"),
+            OVERALL_WIN_RATE=pd.NamedAgg(
+                f"{wins_column}_{percent_column_suffix}", "mean"
+            ),
+            OVERALL_2NDS=pd.NamedAgg(seconds_column, "sum"),
+            OVERALL_3RDS=pd.NamedAgg(thirds_column, "sum"),
+            OVERALL_4THS=pd.NamedAgg(fourths_column, "sum"),
+            OVERALL_2NDS_RATE=pd.NamedAgg(
+                f"{seconds_column}_{percent_column_suffix}", "mean"
+            ),
+            OVERALL_3RDS_RATE=pd.NamedAgg(
+                f"{thirds_column}_{percent_column_suffix}", "mean"
+            ),
+            OVERALL_4THS_RATE=pd.NamedAgg(
+                f"{fourths_column}_{percent_column_suffix}", "mean"
+            ),
+        )
+        .reset_index()
+        .sort_values(
+            by=[
+                players_column,
+                "OVERALL_WIN_RATE",
+            ],
+            ascending=[False, False],
+        )
+        .reset_index(drop=True)
+    )
+
+    return all_wr_df
