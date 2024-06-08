@@ -1,4 +1,12 @@
+import warnings
 import gspread as gs
+import pandas as pd
+import os
+
+warnings.filterwarnings(
+    "ignore",
+    message="[Deprecated][in version 6.0.0]: Method signature's arguments",
+)
 
 
 def create_gs_worksheet_connection(sheet_name: str, sheet_id: str) -> gs.Worksheet:
@@ -27,3 +35,32 @@ def create_gs_worksheet_connection(sheet_name: str, sheet_id: str) -> gs.Workshe
     ws = sh.worksheet(sheet_name)
 
     return ws
+
+
+def write_df_to_worksheet(
+    df: pd.DataFrame,
+    sheet_name: str,
+    range_col_start: str = "A1",
+    range_col_finish: str = "Z",
+):
+
+    idf = df.copy()
+
+    ## all_stats
+    # Get the number of records of the array for the gspread range
+    records_range = idf.shape[0] + 1
+
+    # Create connection to the output Google Sheet
+    ws = create_gs_worksheet_connection(
+        sheet_name=sheet_name,
+        sheet_id=os.environ["SHEET_ID"],
+    )
+
+    # Drop all previous data from the worksheet
+    ws.clear()
+
+    # Write the data to the google sheet
+    ws.update(
+        values=([idf.columns.values.tolist()] + idf.values.tolist()),
+        range_name=f"{range_col_start}:{range_col_finish}{records_range}",
+    )

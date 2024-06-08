@@ -189,6 +189,7 @@ def calculate_all_win_rates(
             OVERALL_4THS_RATE=pd.NamedAgg(
                 f"{fourths_column}_{percent_column_suffix}", "mean"
             ),
+            NPI=pd.NamedAgg("NPI", "mean"),
         )
         .reset_index()
         .sort_values(
@@ -202,3 +203,88 @@ def calculate_all_win_rates(
     )
 
     return all_wr_df
+
+
+def calculate_octets(df: pd.DataFrame) -> pd.DataFrame:
+    """Filter for octets you dummy.
+
+    Args:
+        df (pd.DataFrame): All mkdata input.
+
+    Returns:
+        pd.DataFrame: Filtered DataFrame for octets
+    """
+
+    idf = df.copy()
+
+    # Create uniqueid for season and session uid combination
+    idf["SEASON_SUID"] = [
+        f"{idf['SUID'][idx]}_{idf['SEASON'][idx]}" for idx, x in enumerate(idf["SUID"])
+    ]
+
+    # Filter for players that got a first place in each season and suid combo
+    # Aggregate the count of the games they won in each session
+    season_suid_wins_df = (
+        idf[idf["PLACE"] == 1]
+        .groupby(
+            [
+                "NAME",
+                "SEASON_SUID",
+            ]
+        )
+        .agg(
+            COUNT=pd.NamedAgg("NAME", "count"),
+            SEASON=pd.NamedAgg("SEASON", "first"),
+            SUID=pd.NamedAgg("SUID", "first"),
+        )
+        .reset_index()
+        .sort_values(
+            by=["COUNT"],
+        )
+        .reset_index(drop=True)
+        .drop(columns=["SEASON_SUID"])
+    )
+
+    # Filter for players that won 8 or more games in one session
+    octet_df = (
+        season_suid_wins_df[(season_suid_wins_df["COUNT"] >= 8)]
+        .copy()
+        .sort_values(by=["SEASON", "SUID"])
+        .reset_index(drop=True)
+    )
+
+    return octet_df
+
+
+def calculate_current_suid_character_wins(df: pd.DataFrame) -> pd.DataFrame:
+
+    idf = df.copy()
+
+    # Get the number of the current session and season
+    current_suid = idf.tail(1)["SUID"].values[0]
+    current_season = idf.tail(1)["SEASON"].values[0]
+
+    # Filter all mkdata for current session and season
+    current_session_df = (
+        idf[(idf["SUID"] == current_suid) & (idf["SEASON"] == current_season)]
+        .copy()
+        .reset_index(drop=True)
+    )
+
+    # Filter for first places and simplify DataFrame
+    current_session_wins_df = current_session_df[current_session_df["PLACE"] == 1][
+        ["NAME", "CHARACTER"]
+    ].copy()
+
+    # Get the count of wins per character per player
+    # Alter the axis to get long DataFrame where each character is the index
+    current_session_wins_per_player_df = (
+        pd.crosstab(
+            current_session_wins_df["NAME"], current_session_wins_df["CHARACTER"]
+        )
+        .T.reset_index()
+        .rename_axis(None, axis=1)
+        .sort_values(by=["CHARACTER"])
+    )
+
+    return current_session_wins_per_player_df

@@ -1,9 +1,21 @@
 import os
+import warnings
 from dotenv import load_dotenv
 
+warnings.filterwarnings(
+    "ignore",
+    message="Method signature's arguments 'range_name' and 'values' will change their order.",
+)
+
 from mktools.get_data import load_data_pd
-from mktools.stats import calculate_npi, calculate_all_stats, calculate_all_win_rates
-from mktools.write_data import create_gs_worksheet_connection
+from mktools.stats import (
+    calculate_current_suid_character_wins,
+    calculate_npi,
+    calculate_all_stats,
+    calculate_all_win_rates,
+    calculate_octets,
+)
+from mktools.write_data import write_df_to_worksheet
 
 load_dotenv()
 
@@ -30,7 +42,13 @@ npi_df = calculate_npi(initial_df=df)
 # Define the column name mappings for each possible place
 place_dict = {1: "WINS", 2: "2NDS", 3: "3RDS", 4: "4THS"}
 
+## all_stats
 # Calculate the total stats values for each player, season and game type
+print("-" * 30)
+print("All Stats")
+print("-" * 30)
+print("\n")
+
 all_stats_df = calculate_all_stats(
     initial_df=npi_df,
     place_mapping_ref=place_dict,
@@ -40,27 +58,14 @@ all_stats_df = calculate_all_stats(
     fourths_column=place_dict[4],
 )
 
-
-## all_stats
-# Get the number of records of the array for the gspread range
-records_range = all_stats_df.shape[0] + 1
-
-# Create connection to the output Google Sheet
-ws = create_gs_worksheet_connection(
-    sheet_name="all_stats",
-    sheet_id=os.environ["SHEET_ID"],
-)
-
-# Drop all previous data from the worksheet
-ws.clear()
-
-# Write the data to the google sheet
-ws.update(
-    values=([all_stats_df.columns.values.tolist()] + all_stats_df.values.tolist()),
-    range_name=f"A1:M{records_range}",
-)
+write_df_to_worksheet(df=all_stats_df, sheet_name="all_stats")
 
 ## all_wr
+print("-" * 30)
+print("All Win Rate")
+print("-" * 30)
+print("\n")
+
 all_wr_df = calculate_all_win_rates(
     stats_df=all_stats_df,
     wins_column=place_dict[1],
@@ -69,22 +74,24 @@ all_wr_df = calculate_all_win_rates(
     fourths_column=place_dict[4],
 )
 
+write_df_to_worksheet(df=all_wr_df, sheet_name="all_win_rate")
 
-## all_win_rate
-# Get the number of records of the array for the gspread range
-records_range = all_wr_df.shape[0] + 1
+## octets
+print("-" * 30)
+print("Octets")
+print("-" * 30)
+print("\n")
 
-# Create connection to the output Google Sheet
-ws_wr = create_gs_worksheet_connection(
-    sheet_name="all_win_rate",
-    sheet_id=os.environ["SHEET_ID"],
-)
+octets_df = calculate_octets(df=df)
 
-# Drop all previous data from the worksheet
-ws_wr.clear()
+write_df_to_worksheet(df=octets_df, sheet_name="octets")
 
-# Write the data to the google sheet
-ws_wr.update(
-    values=([all_wr_df.columns.values.tolist()] + all_wr_df.values.tolist()),
-    range_name=f"A1:M{records_range}",
-)
+## Current Session Wins per Player
+print("-" * 30)
+print("Current Session Wins")
+print("-" * 30)
+print("\n")
+
+current_wins = calculate_current_suid_character_wins(df=df)
+
+write_df_to_worksheet(df=current_wins, sheet_name="current_suid_wins")
