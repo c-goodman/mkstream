@@ -288,3 +288,34 @@ def calculate_current_suid_character_wins(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     return current_session_wins_per_player_df
+
+
+def sort_popular(df: pd.DataFrame, col: str):
+
+    wdf = df.copy()
+
+    # Get value counts of entire dataset for a specified column
+    all_df = (
+        wdf[col].value_counts().reset_index().rename(columns={"count": "all_count"})
+    )
+
+    # Get value counts of most recent season for a specified column
+    current_df = (
+        wdf[wdf["SEASON"] == wdf["SEASON"].max()][col]
+        .value_counts()
+        .reset_index()
+        .rename(columns={"count": "current_count"})
+    )
+
+    # Merge current season value counted data with overall
+    # Left merge to create null values in unshared current season values
+    # Fill null count values with 0 for sorting
+    # Sort by current season value counts first descending then all season counts
+    merge_df = (
+        pd.merge(all_df, current_df, on=col, how="left")
+        .fillna(0)
+        .sort_values(by=["current_count", "all_count"], ascending=[False, False])
+        .reset_index(drop=True)
+    )
+
+    return merge_df
