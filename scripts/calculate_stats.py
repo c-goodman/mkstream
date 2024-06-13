@@ -1,5 +1,6 @@
 import os
 import warnings
+import pandas as pd
 from dotenv import load_dotenv
 
 warnings.filterwarnings(
@@ -14,6 +15,7 @@ from mktools.stats import (
     calculate_all_stats,
     calculate_all_win_rates,
     calculate_octets,
+    sort_popular,
 )
 from mktools.write_data import write_df_to_worksheet
 
@@ -95,3 +97,30 @@ print("\n")
 current_wins = calculate_current_suid_character_wins(df=df)
 
 write_df_to_worksheet(df=current_wins, sheet_name="current_suid_wins")
+
+
+## Sorted Name, Character and Map for Dropdowns
+print("-" * 30)
+print("Dropdown Values")
+print("-" * 30)
+print("\n")
+
+# Get sorted names
+popular_names = sort_popular(df=df, col="NAME").drop(
+    columns=["all_count", "current_count"]
+)
+
+# Get sorted characters
+popular_characters = sort_popular(df=df, col="CHARACTER").drop(
+    columns=["all_count", "current_count"]
+)
+
+# Get sorted maps
+popular_maps = sort_popular(df=df, col="MAP").drop(
+    columns=["all_count", "current_count"]
+)
+
+# Concatenate all sorted values on column axis to get one DataFrame
+sorted_out = pd.concat([popular_names, popular_characters, popular_maps], axis=1)
+
+write_df_to_worksheet(df=sorted_out, sheet_name="dropdown")
