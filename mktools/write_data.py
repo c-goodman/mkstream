@@ -42,6 +42,7 @@ def write_df_to_worksheet(
     sheet_name: str,
     range_col_start: str = "A1",
     range_col_finish: str = "Z",
+    headers: bool = True,
 ):
 
     idf = df.copy()
@@ -59,8 +60,18 @@ def write_df_to_worksheet(
     # Drop all previous data from the worksheet
     ws.clear()
 
-    # Write the data to the google sheet
-    ws.update(
-        values=([idf.columns.values.tolist()] + idf.values.tolist()),
-        range_name=f"{range_col_start}:{range_col_finish}{records_range}",
-    )
+    # If choice to write headers is selected include column names
+    if headers:
+        # Write the data to the google sheet
+        ws.update(
+            values=([idf.columns.values.tolist()] + idf.values.tolist()),
+            range_name=f"{range_col_start}:{range_col_finish}{records_range}",
+        )
+    
+    # If choice to write headers is False only write DataFrame values
+    if not headers:
+        # Write the data to the google sheet
+        ws.update(
+            values=(idf.values.tolist()),
+            range_name=f"{range_col_start}:{range_col_finish}{records_range}",
+        )
