@@ -1,5 +1,6 @@
 import os
 import warnings
+import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 
@@ -120,7 +121,27 @@ popular_maps = sort_popular(df=df, col="MAP").drop(
     columns=["all_count", "current_count"]
 )
 
-# Concatenate all sorted values on column axis to get one DataFrame
-sorted_out = pd.concat([popular_names, popular_characters, popular_maps], axis=1)
+# Write dropdown data to sheets
+write_df_to_worksheet(
+    df=popular_names,
+    sheet_name="name_dd",
+    range_col_start="A1",
+    range_col_finish=f"A",
+    headers=False,
+)
 
-write_df_to_worksheet(df=sorted_out, sheet_name="dropdown")
+write_df_to_worksheet(
+    df=popular_characters,
+    sheet_name="character_dd",
+    range_col_start="A1",
+    range_col_finish=f"A",
+    headers=False,
+)
+
+write_df_to_worksheet(
+    df=popular_maps,
+    sheet_name="map_dd",
+    range_col_start="A1",
+    range_col_finish=f"A",
+    headers=False,
+)
