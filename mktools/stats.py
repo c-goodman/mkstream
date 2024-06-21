@@ -260,15 +260,12 @@ def calculate_current_suid_character_wins(df: pd.DataFrame) -> pd.DataFrame:
 
     idf = df.copy()
 
-    # Get the number of the current session and season
+    # Get the number of the current season
     current_suid = idf.tail(1)["SUID"].values[0]
-    current_season = idf.tail(1)["SEASON"].values[0]
 
     # Filter all mkdata for current session and season
     current_session_df = (
-        idf[(idf["SUID"] == current_suid) & (idf["SEASON"] == current_season)]
-        .copy()
-        .reset_index(drop=True)
+        idf[(idf["SUID"] == current_suid)].copy().reset_index(drop=True)
     )
 
     # Filter for first places and simplify DataFrame
@@ -319,3 +316,31 @@ def sort_popular(df: pd.DataFrame, col: str):
     )
 
     return merge_df
+
+
+def calculate_my_maps(df: pd.DataFrame) -> pd.DataFrame:
+
+    wdf = df.copy()
+
+    wins_gb = (
+        wdf[wdf["PLACE"] == 1]
+        .groupby(["MAP", "NAME", "PLAYERS"])
+        .agg(WINS=pd.NamedAgg("UID", "count"))
+        .reset_index()
+    )
+
+    all_gb = (
+        wdf.groupby(["MAP", "NAME", "PLAYERS"])
+        .agg(GAMES_PLAYED=pd.NamedAgg("UID", "count"))
+        .reset_index()
+    )
+
+    mdf = pd.merge(wins_gb, all_gb, on=["MAP", "NAME", "PLAYERS"])
+
+    mdf["WIN_PERCENTAGE"] = (mdf["WINS"] / mdf["GAMES_PLAYED"]) * 100
+
+    mdf_sorted = mdf.sort_values(
+        by=["MAP", "PLAYERS", "WIN_PERCENTAGE"], ascending=[True, False, False]
+    ).reset_index(drop=True)
+
+    return mdf_sorted
