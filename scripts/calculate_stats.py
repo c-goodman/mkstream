@@ -17,6 +17,7 @@ from mktools.stats import (
     calculate_all_win_rates,
     calculate_octets,
     sort_popular,
+    calculate_my_maps,
 )
 from mktools.write_data import write_df_to_worksheet
 
@@ -145,3 +146,14 @@ write_df_to_worksheet(
     range_col_finish=f"A",
     headers=False,
 )
+
+
+## my_maps
+print("-" * 30)
+print("My Maps")
+print("-" * 30)
+print("\n")
+
+my_maps_df = calculate_my_maps(df=df)
+
+write_df_to_worksheet(df=my_maps_df, sheet_name="all_my_maps")
