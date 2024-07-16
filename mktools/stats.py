@@ -217,7 +217,7 @@ def calculate_octets(df: pd.DataFrame) -> pd.DataFrame:
 
     idf = df.copy()
 
-    # Create uniqueid for season and session uid combination
+    # Create Combined UID for season and session uid combination
     idf["SEASON_SUID"] = [
         f"{idf['SUID'][idx]}_{idf['SEASON'][idx]}" for idx, x in enumerate(idf["SUID"])
     ]
