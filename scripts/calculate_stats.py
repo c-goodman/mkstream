@@ -4,11 +4,6 @@ import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 
-warnings.filterwarnings(
-    "ignore",
-    message="Method signature's arguments 'range_name' and 'values' will change their order.",
-)
-
 from mktools.get_data import load_data_pd
 from mktools.stats import (
     calculate_current_suid_character_wins,
@@ -19,7 +14,13 @@ from mktools.stats import (
     sort_popular,
     calculate_my_maps,
 )
+from mktools.validate_data import validate_bad_uids
 from mktools.write_data import write_df_to_worksheet
+
+warnings.filterwarnings(
+    "ignore",
+    message="Method signature's arguments 'range_name' and 'values' will change their order.",
+)
 
 load_dotenv()
 
@@ -46,7 +47,7 @@ npi_df = calculate_npi(initial_df=df)
 # Define the column name mappings for each possible place
 place_dict = {1: "WINS", 2: "2NDS", 3: "3RDS", 4: "4THS"}
 
-## all_stats
+# all_stats
 # Calculate the total stats values for each player, season and game type
 print("-" * 30)
 print("All Stats")
@@ -64,7 +65,7 @@ all_stats_df = calculate_all_stats(
 
 write_df_to_worksheet(df=all_stats_df, sheet_name="all_stats")
 
-## all_wr
+# all_wr
 print("-" * 30)
 print("All Win Rate")
 print("-" * 30)
@@ -80,7 +81,7 @@ all_wr_df = calculate_all_win_rates(
 
 write_df_to_worksheet(df=all_wr_df, sheet_name="all_win_rate")
 
-## octets
+# octets
 print("-" * 30)
 print("Octets")
 print("-" * 30)
@@ -90,7 +91,7 @@ octets_df = calculate_octets(df=df)
 
 write_df_to_worksheet(df=octets_df, sheet_name="octets")
 
-## Current Session Wins per Player
+# Current Session Wins per Player
 print("-" * 30)
 print("Current Session Wins")
 print("-" * 30)
@@ -101,7 +102,7 @@ current_wins = calculate_current_suid_character_wins(df=df)
 write_df_to_worksheet(df=current_wins, sheet_name="current_suid_wins")
 
 
-## Sorted Name, Character and Map for Dropdowns
+# Sorted Name, Character and Map for Dropdowns
 print("-" * 30)
 print("Dropdown Values")
 print("-" * 30)
@@ -148,7 +149,7 @@ write_df_to_worksheet(
 )
 
 
-## my_maps
+# my_maps
 print("-" * 30)
 print("My Maps")
 print("-" * 30)
@@ -157,3 +158,23 @@ print("\n")
 my_maps_df = calculate_my_maps(df=df)
 
 write_df_to_worksheet(df=my_maps_df, sheet_name="all_my_maps")
+
+
+print("-" * 30)
+print("Bad UIDs")
+
+bad_uids_df = validate_bad_uids(df=df)
+
+write_df_to_worksheet(df=bad_uids_df, sheet_name="bad_uids")
+
+print(f"Bad UID Records: {bad_uids_df.shape[0]}")
+print(
+    f"Percent of Total Records: {np.round((bad_uids_df.shape[0] / df.shape[0]) * 100, 2)}%"
+)
+
+shame_df = bad_uids_df[bad_uids_df["PLACE"] == 1]["NAME"].value_counts().reset_index()
+
+print(shame_df)
+
+print("-" * 30)
+print("\n")
