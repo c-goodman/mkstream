@@ -1,8 +1,6 @@
 import os
 import streamlit as st
 import pandas as pd
-import polars as pl
-import numpy as np
 from plotly import express as px
 from typing import List
 from home import load_data_pd
