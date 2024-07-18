@@ -1,4 +1,5 @@
 import os
+import time
 import warnings
 import numpy as np
 import pandas as pd
@@ -41,6 +42,64 @@ df = load_data_pd(
         "SEASON",
     ],
 )
+
+
+print("-" * 30)
+print("Transform Form Data")
+print("-" * 30)
+print("\n")
+
+form_df = load_data_pd(sheet_name="form_data", sheet_id=os.environ["SHEET_ID"])
+
+form_df = form_df.drop(
+    columns=[x for x in form_df.columns if x.__contains__("Unnamed")]
+)
+
+
+form_transformed_df = load_data_pd(
+    sheet_name="form_data_transform", sheet_id=os.environ["SHEET_ID"]
+)
+
+form_transformed_df = form_transformed_df.drop(
+    columns=[x for x in form_transformed_df.columns if x.__contains__("Unnamed")]
+)
+
+form_transformed_df["DATE"] = pd.to_datetime(form_transformed_df["DATE"]).astype(str)
+
+
+transformed_df = form_data_wide_to_long(
+    form_df=form_df, mk_data_df=df, form_data_transform_df=form_transformed_df
+)
+
+
+write_df_to_worksheet(df=transformed_df, sheet_name="form_data_transform")
+
+
+time.sleep(1)
+
+
+# Load Data from the Google Sheet
+df = load_data_pd(
+    sheet_name="data_main",
+    sheet_id=os.environ["SHEET_ID"],
+    usecols=[
+        "UID",
+        "SUID",
+        "NAME",
+        "CHARACTER",
+        "MAP",
+        "PLACE",
+        "PLAYERS",
+        "DATE",
+        "SEASON",
+    ],
+)
+
+if df["UID"].max() == transformed_df["UID"].max():
+    pass
+else:
+    raise IndexError("Data has not yet updated.")
+
 
 # Calculate the overall NPI number for each player per season per game type
 npi_df = calculate_npi(initial_df=df)
@@ -179,34 +238,3 @@ print(shame_df)
 
 print("-" * 30)
 print("\n")
-
-
-print("-" * 30)
-print("Transform Form Data")
-print("-" * 30)
-print("\n")
-
-form_df = load_data_pd(sheet_name="form_data", sheet_id=os.environ["SHEET_ID"])
-
-form_df = form_df.drop(
-    columns=[x for x in form_df.columns if x.__contains__("Unnamed")]
-)
-
-
-form_transformed_df = load_data_pd(
-    sheet_name="form_data_transform", sheet_id=os.environ["SHEET_ID"]
-)
-
-form_transformed_df = form_transformed_df.drop(
-    columns=[x for x in form_transformed_df.columns if x.__contains__("Unnamed")]
-)
-
-form_transformed_df["DATE"] = pd.to_datetime(form_transformed_df["DATE"]).astype(str)
-
-
-transformed_df = form_data_wide_to_long(
-    form_df=form_df, mk_data_df=df, form_data_transform_df=form_transformed_df
-)
-
-
-write_df_to_worksheet(df=transformed_df, sheet_name="form_data_transform")
