@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import datetime
 
 
 def load_data_pd(
@@ -23,16 +24,11 @@ def load_data_pd(
     if isinstance(usecols, list):
         # Load the data from the URL as a Polars DataFrame
         # Fill Null values with `np.nan`
-        df = pd.read_csv(
-            url,
-            usecols=usecols,
-        ).fillna(np.nan)
+        df = pd.read_csv(url, usecols=usecols).fillna(np.nan)
 
     if usecols is None:
         # Load the data from the URL as a Polars DataFrame
         # Fill Null values with `np.nan`
-        df = pd.read_csv(
-            url,
-        ).fillna(np.nan)
+        df = pd.read_csv(url).fillna(np.nan)
 
     return df

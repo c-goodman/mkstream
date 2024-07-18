@@ -16,6 +16,7 @@ from mktools.stats import (
 )
 from mktools.validate_data import validate_bad_uids
 from mktools.write_data import write_df_to_worksheet
+from mktools.form_data import form_data_wide_to_long
 
 warnings.filterwarnings(
     "ignore",
@@ -26,7 +27,7 @@ load_dotenv()
 
 # Load Data from the Google Sheet
 df = load_data_pd(
-    sheet_name="data",
+    sheet_name="data_main",
     sheet_id=os.environ["SHEET_ID"],
     usecols=[
         "UID",
@@ -178,3 +179,34 @@ print(shame_df)
 
 print("-" * 30)
 print("\n")
+
+
+print("-" * 30)
+print("Transform Form Data")
+print("-" * 30)
+print("\n")
+
+form_df = load_data_pd(sheet_name="form_data", sheet_id=os.environ["SHEET_ID"])
+
+form_df = form_df.drop(
+    columns=[x for x in form_df.columns if x.__contains__("Unnamed")]
+)
+
+
+form_transformed_df = load_data_pd(
+    sheet_name="form_data_transform", sheet_id=os.environ["SHEET_ID"]
+)
+
+form_transformed_df = form_transformed_df.drop(
+    columns=[x for x in form_transformed_df.columns if x.__contains__("Unnamed")]
+)
+
+form_transformed_df["DATE"] = pd.to_datetime(form_transformed_df["DATE"]).astype(str)
+
+
+transformed_df = form_data_wide_to_long(
+    form_df=form_df, mk_data_df=df, form_data_transform_df=form_transformed_df
+)
+
+
+write_df_to_worksheet(df=transformed_df, sheet_name="form_data_transform")
