@@ -27,7 +27,7 @@ warnings.filterwarnings(
 load_dotenv()
 
 # Load Data from the Google Sheet
-df = load_data_pd(
+idf = load_data_pd(
     sheet_name="data_main",
     sheet_id=os.environ["SHEET_ID"],
     usecols=[
@@ -55,50 +55,71 @@ form_df = form_df.drop(
     columns=[x for x in form_df.columns if x.__contains__("Unnamed")]
 )
 
+# Get last unique datetime values from data_main sheet and form_data sheet
+last_data_main_date = idf["DATE"].tail(1).values[0]
+last_form_date = form_df["Timestamp"].tail(1).values[0]
 
-form_transformed_df = load_data_pd(
-    sheet_name="form_data_transform", sheet_id=os.environ["SHEET_ID"]
-)
+# If there is no new data from the form set initial data_main DataFrame to reused variable..
+# ..and do not attempt to transform and append non-existent data
+if last_data_main_date == last_form_date:
+    print("No New Data Skipping Transform and Append")
 
-form_transformed_df = form_transformed_df.drop(
-    columns=[x for x in form_transformed_df.columns if x.__contains__("Unnamed")]
-)
+    df = idf.copy()
 
-form_transformed_df["DATE"] = pd.to_datetime(form_transformed_df["DATE"]).astype(str)
+# If there is at least one new record in the form_data sheet transform it to data_main long format
+elif last_data_main_date != last_form_date:
+    form_transformed_df = load_data_pd(
+        sheet_name="form_data_transform", sheet_id=os.environ["SHEET_ID"]
+    )
 
+    form_transformed_df = form_transformed_df.drop(
+        columns=[x for x in form_transformed_df.columns if x.__contains__("Unnamed")]
+    )
 
-transformed_df = form_data_wide_to_long(
-    form_df=form_df, mk_data_df=df, form_data_transform_df=form_transformed_df
-)
+    form_transformed_df["DATE"] = pd.to_datetime(form_transformed_df["DATE"]).astype(
+        str
+    )
 
+    transformed_df = form_data_wide_to_long(
+        form_df=form_df, mk_data_df=idf, form_data_transform_df=form_transformed_df
+    )
 
-write_df_to_worksheet(df=transformed_df, sheet_name="form_data_transform")
+    write_df_to_worksheet(df=transformed_df, sheet_name="form_data_transform")
 
+    # Wait for IMPORTRANGE to move new transformed data to data_main sheet
+    time.sleep(1)
 
-time.sleep(1)
+    # Reload Updated Data from the Google Sheet
+    df = load_data_pd(
+        sheet_name="data_main",
+        sheet_id=os.environ["SHEET_ID"],
+        usecols=[
+            "UID",
+            "SUID",
+            "NAME",
+            "CHARACTER",
+            "MAP",
+            "PLACE",
+            "PLAYERS",
+            "DATE",
+            "SEASON",
+        ],
+    )
 
+    # Double check that newest data exists in data_main
+    if df["UID"].max() == transformed_df["UID"].max():
+        pass
 
-# Load Data from the Google Sheet
-df = load_data_pd(
-    sheet_name="data_main",
-    sheet_id=os.environ["SHEET_ID"],
-    usecols=[
-        "UID",
-        "SUID",
-        "NAME",
-        "CHARACTER",
-        "MAP",
-        "PLACE",
-        "PLAYERS",
-        "DATE",
-        "SEASON",
-    ],
-)
+    # If it does not exist extend the wait
+    else:
+        print("Data has not yet updated. (Wait 5s for IMPORTRANGE)")
 
-if df["UID"].max() == transformed_df["UID"].max():
-    pass
-else:
-    raise IndexError("Data has not yet updated.")
+        # Wait for IMPORTRANGE to move new transformed data to data_main sheet
+        time.sleep(5)
+
+        # If data is still not updated raise error
+        if not df["UID"].max() == transformed_df["UID"].max():
+            raise IndexError("Data still not updated, exiting process.")
 
 
 # Calculate the overall NPI number for each player per season per game type

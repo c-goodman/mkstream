@@ -123,4 +123,6 @@ def form_data_wide_to_long(
         by=["UID", "DATE", "SUID", "SEASON", "PLACE"]
     )
 
+    wide_concat["DATE"] = wide_concat["DATE"].astype(str).str.replace("'", "")
+
     return wide_concat
