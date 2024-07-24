@@ -233,6 +233,8 @@ for fdf in [four_p_df, three_p_df, two_p_df]:
         )
 
     with open(
-        rf"{file_path}\{fdf['PLAYERS'].max()}P_all_elo.html", "w", encoding="utf-8"
+        rf"{file_path}\all_elo\{fdf['PLAYERS'].max()}P_all_elo.html",
+        "w",
+        encoding="utf-8",
     ) as out_file:
         out_file.write(str(html_join))
