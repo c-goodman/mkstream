@@ -12,7 +12,9 @@ def form_data_wide_to_long(
 
     fdf = form_df.copy().rename(columns={"Timestamp": "DATE"})
 
-    fdf["DATE"] = pd.to_datetime(fdf["DATE"]).astype(str)
+    fdf["DATE"] = (
+        pd.to_datetime(fdf["DATE"]).dt.strftime("%Y-%m-%d %H:%M:%S").astype(str)
+    )
 
     fdf = fdf[~fdf["DATE"].isin(ft_df["DATE"])].copy().reset_index(drop=True)
 
@@ -122,7 +124,5 @@ def form_data_wide_to_long(
     wide_concat = pd.concat([ft_df, wide_sorted]).sort_values(
         by=["UID", "DATE", "SUID", "SEASON", "PLACE"]
     )
-
-    wide_concat["DATE"] = wide_concat["DATE"].astype(str).str.replace("'", "")
 
     return wide_concat
