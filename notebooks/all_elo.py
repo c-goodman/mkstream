@@ -8,9 +8,10 @@ import plotly.express as px
 from alive_progress import alive_it
 from bs4 import BeautifulSoup
 
+# Load Variables from .env file
 load_dotenv()
 
-
+# Load data_main from google sheet
 df = load_data_pd(
     sheet_name="data_main",
     sheet_id=os.environ["SHEET_ID"],
@@ -27,8 +28,10 @@ df = load_data_pd(
     ],
 )
 
+# Convert date to string for... TODO: Update comment
 df["DATE"] = pd.to_datetime(df["DATE"]).astype(str)
 
+# Find UIDs that will break ELO calculation
 invalid, valid = validate_bad_uids(df=df, return_valid=True)
 
 vdf = valid.copy()
