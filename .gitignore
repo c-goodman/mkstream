@@ -3,6 +3,7 @@ assets/
 # My .gitignore
 /requirements
 .vscode
+/form_data_migration
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
