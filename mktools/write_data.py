@@ -2,6 +2,7 @@ import warnings
 import gspread as gs
 import pandas as pd
 import os
+import time
 
 warnings.filterwarnings(
     "ignore",
@@ -45,6 +46,7 @@ def write_df_to_worksheet(
     headers: bool = True,
 ):
 
+    time.sleep(1)
     idf = df.copy()
 
     ## all_stats
