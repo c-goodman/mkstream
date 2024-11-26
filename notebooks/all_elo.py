@@ -103,7 +103,9 @@ all_fig = px.line(
     markers=True,
 )
 
-all_fig.write_html(r"C:\Users\Cooper\sandbox\mkstream\assets\fig\all_elo\all_elo.html")
+all_fig.write_html(
+    rf"C:\Users\{os.environ['USERNAME']}\sandbox\mkstream\assets\fig\all_elo\all_elo.html"
+)
 
 
 seasons_tracked = []
@@ -201,9 +203,11 @@ for k in st_dict.keys():
         title=k,
     )
 
-    f.write_html(rf"C:\Users\Cooper\sandbox\mkstream\assets\fig\elo_{k}.html")
+    f.write_html(
+        rf"C:\Users\{os.environ['USERNAME']}\sandbox\mkstream\assets\fig\elo_{k}.html"
+    )
 
-file_path = r"C:\Users\Cooper\sandbox\mkstream\assets\fig"
+file_path = rf"C:\Users\{os.environ['USERNAME']}\sandbox\mkstream\assets\fig"
 
 html_file_names = pd.Series(
     [x for x in os.listdir(file_path) if not x.__contains__("all_elo")]
