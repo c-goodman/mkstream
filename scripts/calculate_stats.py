@@ -81,7 +81,11 @@ elif last_data_main_date != last_form_date:
     )
 
     transformed_df = form_data_wide_to_long(
-        form_df=form_df, mk_data_df=idf, form_data_transform_df=form_transformed_df
+        form_df=form_df,
+        mk_data_df=idf,
+        form_data_transform_df=form_transformed_df,
+        # Enable SUID creation based on rolling 24hr window with cutoff time (currently 7AM UTC)
+        enable_time_based_sessions=True,
     )
 
     write_df_to_worksheet(df=transformed_df, sheet_name="form_data_transform")

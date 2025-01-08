@@ -6,11 +6,21 @@ def form_data_wide_to_long(
     form_df: pd.DataFrame,
     mk_data_df: pd.DataFrame,
     form_data_transform_df: pd.DataFrame,
+    enable_time_based_sessions: bool = True,
 ) -> pd.DataFrame:
 
     ft_df = form_data_transform_df.copy()
 
-    fdf = form_df.copy().rename(columns={"Timestamp": "DATE"})
+    fdf_initial = form_df.copy().rename(columns={"Timestamp": "DATE"})
+
+    if enable_time_based_sessions:
+        fdf = fill_new_session(
+            df=fdf_initial,
+            timestamp_column_name="DATE",
+            drop_window_start_column=True,
+        )
+    else:
+        fdf = fdf_initial.copy()
 
     fdf["DATE"] = (
         pd.to_datetime(fdf["DATE"]).dt.strftime("%Y-%m-%d %H:%M:%S").astype(str)
@@ -126,3 +136,45 @@ def form_data_wide_to_long(
     )
 
     return wide_concat
+
+
+def fill_new_session(
+    df: pd.DataFrame,
+    timestamp_column_name: str = "Timestamp",
+    drop_window_start_column: bool = True,
+) -> pd.DataFrame:
+
+    tdf = df.copy()
+
+    # Ensure 'TIMESTAMP' column is in datetime format (UTC)
+    tdf[timestamp_column_name] = pd.to_datetime(tdf[timestamp_column_name])
+
+    # Create a new column for NEW_SESSION and initially mark all as 'NO'
+    tdf["NEW_SESSION"] = "NO"
+
+    # Generate the window start (07:00 UTC) for each game
+    tdf["window_start"] = tdf[timestamp_column_name].dt.floor("D") + pd.Timedelta(
+        hours=7
+    )
+
+    # Iterate through each row to identify the first game in each 24-hour window
+    for idx, row in tdf.iterrows():
+
+        window_start = row["window_start"]
+
+        window_end = window_start + pd.Timedelta(days=1) - pd.Timedelta(nanoseconds=1)
+
+        # Get all games within the 24-hour window
+        games_in_window = tdf[
+            (tdf[timestamp_column_name] >= window_start)
+            & (tdf[timestamp_column_name] <= window_end)
+        ]
+
+        # Mark the first game in the window as 'YES'
+        if row[timestamp_column_name] == games_in_window[timestamp_column_name].min():
+            tdf.at[idx, "NEW_SESSION"] = "YES"
+
+    if drop_window_start_column:
+        tdf = tdf.drop(columns=["window_start"])
+
+    return tdf
