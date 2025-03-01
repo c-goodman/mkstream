@@ -157,6 +157,10 @@ def fill_new_session(
         hours=7
     )
 
+    tdf["window_end"] = (
+        tdf["window_start"] + pd.Timedelta(days=1) - pd.Timedelta(nanoseconds=1)
+    )
+
     # Iterate through each row to identify the first game in each 24-hour window
     for idx, row in tdf.iterrows():
 
@@ -173,8 +177,13 @@ def fill_new_session(
         # Mark the first game in the window as 'YES'
         if row[timestamp_column_name] == games_in_window[timestamp_column_name].min():
             tdf.at[idx, "NEW_SESSION"] = "YES"
+            tdf.at[idx, "window_start"] = games_in_window["window_start"].min()
+            tdf.at[idx, "window_end"] = games_in_window["window_end"].max()
+        else:
+            tdf.at[idx, "window_start"] = games_in_window["window_start"].min()
+            tdf.at[idx, "window_end"] = games_in_window["window_end"].max()
 
     if drop_window_start_column:
-        tdf = tdf.drop(columns=["window_start"])
+        tdf = tdf.drop(columns=["window_start", "window_end"])
 
     return tdf
