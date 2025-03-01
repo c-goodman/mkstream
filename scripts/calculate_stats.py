@@ -119,7 +119,7 @@ elif last_data_main_date != last_form_date:
         print("Data has not yet updated. (Wait 5s for IMPORTRANGE)")
 
         # Wait for IMPORTRANGE to move new transformed data to data_main sheet
-        time.sleep(5)
+        time.sleep(10)
 
         # If data is still not updated raise error
         if not df["UID"].max() == transformed_df["UID"].max():
