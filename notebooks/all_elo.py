@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 load_dotenv()
 
 # Load data_main from google sheet
-df = load_data_pd(
+df_initial = load_data_pd(
     sheet_name="data_main",
     sheet_id=os.environ["SHEET_ID"],
     usecols=[
@@ -27,6 +27,12 @@ df = load_data_pd(
         "SEASON",
     ],
 )
+
+# TODO: THIS IS LAZY AND A TERRIBLE IDEA!!!
+# Duplicate uid was caused by a timestamp equality, will be fixed when we move..
+# ..to the website lol
+# Will likely need to filter this in any future data migrations...
+df = df_initial[df_initial["UID"].astype(int) != 10606].copy()
 
 # Convert date to string for... TODO: Update comment
 df["DATE"] = pd.to_datetime(df["DATE"]).astype(str)
@@ -55,6 +61,14 @@ valid_valid_valid = (
 )
 
 v_invalid, v_valid = validate_bad_uids(df=valid_valid_valid, return_valid=True)
+
+
+import datetime
+
+v = v_valid.copy()
+v["DATE"] = pd.to_datetime(v["DATE"])
+
+q = v[(v["SEASON"] == 19) & (v["DATE"] < datetime.datetime(2025, 5, 25))]
 
 
 tdf = (
