@@ -224,7 +224,7 @@ for k in st_dict.keys():
 file_path = rf"C:\Users\{os.environ['USERNAME']}\sandbox\mkstream\assets\fig"
 
 html_file_names = pd.Series(
-    [x for x in os.listdir(file_path) if not x.__contains__("all_elo")]
+    [x for x in os.listdir(file_path) if not os.path.isdir(x)]
 ).sort_values()
 
 season_count = [
